@@ -1,0 +1,770 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "ImageId": {
+      "Type": "AWS::EC2::Image::Id",
+      "Description": "Enter an EC2 AMI Id to use in the Launch Configuration"
+    },
+    "KeyPair": {
+      "Type": "String",
+      "Default": "avatar-keys",
+      "Description": "Enter the name of a keypair to be used with the EC2 instances"
+    }
+  },
+  "Resources": {
+    "AvatarVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "avatar-vpc-cloudformation"
+          }
+        ]
+      }
+    },
+    "AvatarSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select" : [
+            "0",
+            {
+              "Fn::GetAZs" : { "Ref": "AWS::Region" }
+            }
+          ]
+        },
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "avatar-subnet-a"
+          }
+        ]
+      }
+    },
+    "AvatarSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select" : [
+            "1",
+            {
+              "Fn::GetAZs" : { "Ref": "AWS::Region" }
+            }
+          ]
+        },
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "avatar-subnet-b"
+          }
+        ]
+      }
+    },
+    "AvatarInternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+      }
+    },
+    "AvatarDHCPOptions": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": { "Fn::Sub": [ "${Region}.compute.internal", { "Region": {"Ref" : "AWS::Region" }} ]},
+        "DomainNameServers": [
+          "AmazonProvidedDNS"
+        ]
+      }
+    },
+    "AvatarNetworkAcl": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        }
+      }
+    },
+    "AvatarRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        }
+      }
+    },
+    "AvatarElasticLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "DependsOn": "AvatarVPCGatewayAttachment",
+      "Properties": {
+        "SecurityGroups": [
+          {
+            "Ref": "AvatarELBSecurityGroup"
+          }
+        ],
+        "Subnets": [
+          {
+            "Ref": "AvatarSubnetA"
+          },
+          {
+            "Ref": "AvatarSubnetB"
+          }
+        ],
+        "Scheme": "internet-facing",
+        "Type": "application"
+      }
+    },
+    "AvatarELBListener": {
+      "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+      "DependsOn": "AvatarVPCGatewayAttachment",
+      "Properties" : {
+          "DefaultActions" : [
+            {
+              "ForwardConfig": {
+                "TargetGroups": [{
+                  "TargetGroupArn": { "Ref": "AvatarTargetGroup" }
+                 }],
+                "TargetGroupStickinessConfig": {
+                  "DurationSeconds": 86400,
+                  "Enabled": true
+                }
+              },
+              "TargetGroupArn": { "Ref": "AvatarTargetGroup" },
+              "Type": "forward"
+            }
+          ],
+          "LoadBalancerArn" : { "Ref": "AvatarElasticLoadBalancer" },
+          "Port" : 80,
+          "Protocol" : "HTTP"
+        }
+    },
+    "AvatarTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "DependsOn": "AvatarVPCGatewayAttachment",
+      "Properties": {
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "VpcId": { "Ref": "AvatarVPC" }
+      }
+    },
+    "AvatarAutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "DependsOn": "AvatarVPCGatewayAttachment",
+      "Properties": {
+        "AvailabilityZones": [
+          { "Fn::GetAtt" : [ "AvatarSubnetA", "AvailabilityZone" ] },
+          { "Fn::GetAtt" : [ "AvatarSubnetB", "AvailabilityZone" ] }
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "2",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "ELB",
+        "LaunchTemplate": {
+          "LaunchTemplateId": { "Ref": "AvatarLaunchTemplate" },
+          "Version": { "Fn::GetAtt" : [ "AvatarLaunchTemplate", "DefaultVersionNumber" ] }
+        },
+        "MaxSize": "4",
+        "MinSize": "2",
+        "TargetGroupARNs": [
+          { "Ref": "AvatarTargetGroup" }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ],
+        "VPCZoneIdentifier": [
+          { "Ref": "AvatarSubnetA" },
+          { "Ref": "AvatarSubnetB" }
+        ]
+      }
+    },
+    "AvatarEC2Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "*",
+                    "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AvatarInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "AvatarEC2Role"
+          }
+        ]
+      }
+    },
+    "AvatarLaunchTemplate": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties" : {
+          "LaunchTemplateData": {
+            "BlockDeviceMappings": [
+              {
+                "DeviceName": "/dev/xvda",
+                "Ebs": {
+                  "VolumeSize": 10
+                }
+              }
+            ],
+            "IamInstanceProfile": {
+              "Arn": { "Fn::GetAtt" : ["AvatarInstanceProfile", "Arn"] }
+            },
+            "ImageId": { "Ref": "ImageId" },
+            "InstanceType": "t2.micro",
+            "KeyName": { "Ref": "KeyPair" },
+            "SecurityGroupIds": [
+              { "Fn::GetAtt": ["AvatarEC2SecurityGroup", "GroupId"] }
+            ],
+            "UserData": "IyEvYmluL2Jhc2gNCmVjaG8gInN0YXJ0aW5nIHBpenphLWx1dnJzIg0KY2QgL2hvbWUvZWMyLXVzZXIvcGl6emEtbHV2cnMNCm5wbSBzdGFydA=="
+          }
+        }
+    },
+    "AvatarRDSDB": {
+      "Type": "AWS::RDS::DBInstance",
+      "DependsOn": "AvatarVPCGatewayAttachment",
+      "Properties": {
+        "AllocatedStorage": "5",
+        "AllowMajorVersionUpgrade": "false",
+        "AutoMinorVersionUpgrade": "true",
+        "DBInstanceClass": "db.t2.micro",
+        "Port": "5432",
+        "PubliclyAccessible": "true",
+        "StorageType": "gp2",
+        "BackupRetentionPeriod": "7",
+        "MasterUsername": "awsuser",
+        "MasterUserPassword": "MyPassword",
+        "PreferredBackupWindow": "07:47-08:17",
+        "PreferredMaintenanceWindow": "mon:12:54-mon:13:24",
+        "DBName": "MyDatabase",
+        "Engine": "postgres",
+        "EngineVersion": "9.5.2",
+        "LicenseModel": "postgresql-license",
+        "DBSubnetGroupName": {
+          "Ref": "AvatarDBSubnetGroup"
+        },
+        "VPCSecurityGroups": [
+          {
+            "Ref": "AvatarRDSSecurityGroup"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "workload-type",
+            "Value": "other"
+          }
+        ]
+      }
+    },
+    "AvatarTableFeatures": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "id",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "5",
+          "WriteCapacityUnits": "5"
+        }
+      }
+    },
+    "AvatarTableUsers": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "username",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "username",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": "5",
+          "WriteCapacityUnits": "5"
+        }
+      }
+    },
+    "AvatarS3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "Private",
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [
+                "Authorization"
+              ],
+              "AllowedMethods": [
+                "GET"
+              ],
+              "AllowedOrigins": [
+                "*"
+              ],
+              "MaxAge": "3000"
+            }
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": "Suspended"
+        }
+      }
+    },
+    "AvatarDBSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "default",
+        "SubnetIds": [
+          { "Ref": "AvatarSubnetA" },
+          { "Ref": "AvatarSubnetB" }
+        ]
+      }
+    },
+    "AvatarSNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "DisplayName": "dynamodb"
+      }
+    },
+    "AvatarEC2SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for avatar maker ec2 instances",
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        }
+      }
+    },
+    "AvatarELBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the avatar maker ELB load balancer",
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        }
+      }
+    },
+    "AvatarRDSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the avatar maker RDS database",
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        }
+      }
+    },
+    "AvatarSNSTopicPolicy": {
+      "Type": "AWS::SNS::TopicPolicy",
+      "Properties": {
+        "Topics": [
+          {
+            "Ref": "AvatarSNSTopic"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2008-10-17",
+          "Id": "__default_policy_ID",
+          "Statement": [
+            {
+              "Sid": "__default_statement_ID",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Action": [
+                "SNS:GetTopicAttributes",
+                "SNS:SetTopicAttributes",
+                "SNS:AddPermission",
+                "SNS:RemovePermission",
+                "SNS:DeleteTopic",
+                "SNS:Subscribe",
+                "SNS:ListSubscriptionsByTopic",
+                "SNS:Publish",
+                "SNS:Receive"
+              ],
+              "Resource": {
+                "Ref": "AvatarSNSTopic"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceOwner": { "Ref": "AWS::AccountId" }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AvatarS3BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "AvatarS3Bucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Id": "Policy1468466027141",
+          "Statement": [
+            {
+              "Sid": "Stmt1468466021537",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "AvatarS3Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AvatarScalingPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Ref": "AvatarAutoScalingGroup"
+        },
+        "PolicyType": "TargetTrackingScaling",
+        "TargetTrackingConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ASGAverageNetworkOut"
+          },
+          "TargetValue": 5000000.0
+        }
+      }
+    },
+    "AvatarCloudWatchFeaturesReadAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ActionsEnabled": "true",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods": "5",
+        "MetricName": "ConsumedReadCapacityUnits",
+        "Namespace": "AWS/DynamoDB",
+        "Period": "60",
+        "Statistic": "Sum",
+        "Threshold": "240.0",
+        "AlarmActions": [
+          { "Ref": "AvatarSNSTopic" }
+        ],
+        "Dimensions": [
+          {
+            "Name": "TableName",
+            "Value": "features"
+          }
+        ]
+      }
+    },
+    "AvatarCloudWatchFeaturesWriteAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ActionsEnabled": "true",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods": "5",
+        "MetricName": "ConsumedWriteCapacityUnits",
+        "Namespace": "AWS/DynamoDB",
+        "Period": "60",
+        "Statistic": "Sum",
+        "Threshold": "240.0",
+        "AlarmActions": [
+          { "Ref": "AvatarSNSTopic" }
+        ],
+        "Dimensions": [
+          {
+            "Name": "TableName",
+            "Value": "features"
+          }
+        ]
+      }
+    },
+    "AvatarCloudWatchUsersReadAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ActionsEnabled": "true",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods": "5",
+        "MetricName": "ConsumedReadCapacityUnits",
+        "Namespace": "AWS/DynamoDB",
+        "Period": "60",
+        "Statistic": "Sum",
+        "Threshold": "240.0",
+        "AlarmActions": [
+          { "Ref": "AvatarSNSTopic" }
+        ],
+        "Dimensions": [
+          {
+            "Name": "TableName",
+            "Value": "users"
+          }
+        ]
+      }
+    },
+    "AvatarCloudWatchUsersWriteAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ActionsEnabled": "true",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods": "5",
+        "MetricName": "ConsumedWriteCapacityUnits",
+        "Namespace": "AWS/DynamoDB",
+        "Period": "60",
+        "Statistic": "Sum",
+        "Threshold": "240.0",
+        "AlarmActions": [
+          { "Ref": "AvatarSNSTopic" }
+        ],
+        "Dimensions": [
+          {
+            "Name": "TableName",
+            "Value": "users"
+          }
+        ]
+      }
+    },
+    "AvatarNetworkAclEntry": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Egress": "true",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "AvatarNetworkAcl"
+        }
+      }
+    },
+    "AvatarNetworkAclEntry2": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "AvatarNetworkAcl"
+        }
+      }
+    },
+    "AvatarSubnetNetworkAclAssocationA": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "AvatarNetworkAcl"
+        },
+        "SubnetId": {
+          "Ref": "AvatarSubnetA"
+        }
+      }
+    },
+    "AvatarSubnetNetworkAclAssocationB": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "AvatarNetworkAcl"
+        },
+        "SubnetId": {
+          "Ref": "AvatarSubnetB"
+        }
+      }
+    },
+    "AvatarSubnetARouteTableAssociation" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : {
+          "Ref" : "AvatarSubnetA"
+        },
+        "RouteTableId" : {
+          "Ref" : "AvatarRouteTable"
+        }
+      }
+    },
+    "AvatarSubnetBRouteTableAssociation" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : {
+          "Ref" : "AvatarSubnetB"
+        },
+        "RouteTableId" : {
+          "Ref" : "AvatarRouteTable"
+        }
+      }
+    },
+    "AvatarVPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "AvatarInternetGateway"
+        }
+      }
+    },
+    "AvatarVPCRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "AvatarVPCGatewayAttachment",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "AvatarRouteTable"
+        },
+        "GatewayId": {
+          "Ref": "AvatarInternetGateway"
+        }
+      }
+    },
+    "AvatarVPCDHCPAssociation": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "VpcId": {
+          "Ref": "AvatarVPC"
+        },
+        "DhcpOptionsId": {
+          "Ref": "AvatarDHCPOptions"
+        }
+      }
+    },
+    "AvatarEC2SGIngressRuleForSSH": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarEC2SecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "AvatarEC2SGIngressRuleForPort3000": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarEC2SecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "3000",
+        "ToPort": "3000",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "AvatarELBSGIngressRuleForPort80": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarELBSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "AvatarRDSSGIngressRuleForPort5432": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarRDSSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "5432",
+        "ToPort": "5432",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "AvatarEC2SGEgressRule": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarEC2SecurityGroup"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "AvatarELBSGEgressRule": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarELBSecurityGroup"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "AvatarRDSSGEgressRule": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "AvatarRDSSecurityGroup"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    }
+  },
+  "Description": "avatar-maker infrastructure"
+}

@@ -1,0 +1,6 @@
+{
+	"name": "Busy Look",
+	"features": ["Face Type A", "Hair Style B", "Eye Shap A", "Glasses", "Mouth Shape A", "Beard"],
+	"img": "/assets/avatars/busy-look.png",
+	"username": "tim"
+}

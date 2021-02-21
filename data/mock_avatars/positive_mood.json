@@ -1,0 +1,6 @@
+{
+	"name": "Positive Mood",
+	"features": ["Face Type A", "Hair Style B", "Blush", "Eye Shap B", "Nose", "Mouth Shape C"],
+	"img": "/assets/avatars/positive-mood.png",
+	"username": "lily"
+}

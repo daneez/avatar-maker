@@ -1,0 +1,27 @@
+<body>
+  {{> header}}
+  <div id="makeAvatar">
+    <h1>Let's make a avatar!</h1>
+    <div id="avatarSection">
+      <div class="name">
+        <input type="text" id="avatarName" placeholder="Name this look"/>
+        <button id="createAvatar" onclick="sendAvatar()">Create</button>
+      </div>
+      <canvas id="avatar" height="400" width="400"></canvas>
+    </div>
+    <div id="featureSection">
+      <h3>Choose your features</h3>
+      <ul id="features">
+        {{#each features}}
+          <li class="feature" id="{{id}}">
+            <img src='/assets/features/{{previewImage}}' />
+            <div class="label">{{name}}</div>
+          </li>
+        {{/each}}
+      </ul>
+    </div>
+    <div id="userInfo" data-username="{{auth.credentials.user.username}}" style="display:none;"></div>
+  </div>
+  {{> footer}}
+  <script src="/assets/js/make.js"></script>
+</body>

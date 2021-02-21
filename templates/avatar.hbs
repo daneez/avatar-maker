@@ -1,0 +1,18 @@
+<body>
+  {{> header}}
+  <div id="viewAvatar">
+    <div class="title">
+      <span class="avatar-name">{{avatar.name}}</span> by <a href="/user/{{avatar.username}}">{{avatar.username}}</a>
+    </div>
+    <img src="{{{avatar.img}}}" class="avatar-image"/>
+    <div class="avatar-features">
+      <h4>Features:</h4>
+      <ul>
+        {{#each avatar.features}}
+          <li>{{getFeatureName this @root.features}}</li>
+        {{/each}}
+      </ul>
+    </div>
+  </div>
+  {{> footer}}
+</body>

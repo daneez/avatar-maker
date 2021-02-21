@@ -1,0 +1,257 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  color: #930fd0;
+  text-align: center;
+}
+body.index {
+  background-color: rgb(245, 206, 206);
+}
+header {
+  z-index: 1001;
+}
+header img.background {
+  width: auto;
+}
+header img.logo {
+  width: 13%;
+  position: absolute;
+  top: 5px;
+  left: 25px;
+}
+#main img.logo {
+  max-height: 150px;
+  max-width: 75%;
+}
+input {
+  padding-left: 15px;
+  line-height: 42px;
+  font-size: 16px;
+  border: 1px #69D2E7 solid;
+}
+input:focus {
+  outline: 3px #69D2E7 solid;
+}
+button {
+  background-color: #69D2E7;
+  padding: 15px;
+  color: white;
+  text-decoration: none;
+  border: 0;
+  font-size: 16px;
+  border-right: solid 6px #A7DBD8;
+}
+button:hover,
+button:focus {
+  background-color: #A7DBD8;
+  cursor: pointer;
+  outline: none;
+}
+#main {
+  margin-top: -10%;
+}
+#callToAction {
+  padding-top: 10%;
+  text-align: center;
+  background-color: rgba(255,255,255,0.8);
+  overflow: hidden;
+}
+#callToAction h3 {
+  margin-bottom: 35px;
+}
+.make-avatar-button {
+  margin-bottom: 50px;
+}
+.make-avatar-button > a {
+  background-color: #dba7d5;
+  padding: 15px;
+  color: white;
+  text-decoration: none;
+  border-right: solid 6px #ceb8d8;
+}
+.make-avatar-button > a:hover,
+.make-avatar-button > a:focus {
+  background-color: #fcd3f7;
+}
+.user {
+  position: absolute;
+  color: white;
+  right: 25px;
+  top: 15px;
+}
+.user a {
+  color: rgb(145, 9, 242);
+  text-decoration: none;
+}
+.user a:hover,
+.user a:focus {
+  opacity: .8;
+}
+#more {
+  background: white;
+  overflow: hidden;
+  text-align: center;
+}
+.avatar-boxes {
+  list-style-type: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  margin: 50px 0;
+}
+.avatar-boxes li {
+  padding: 20px;
+  min-width: 65px;
+  min-height: 65px;
+  margin: 0 20px 15px;
+}
+.avatar-boxes li img {
+  height: 100px;
+  width: 100px;
+}
+.avatar-boxes li:nth-child(3n+1) {
+  background-color: #69e7a2;
+}
+.avatar-boxes li:nth-child(3n+2) {
+  background-color: #32e0f3;
+}
+.avatar-boxes li:nth-child(3n+3) {
+  background-color: #b97ee3;
+}
+.avatar-boxes li a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+footer {
+  text-align: center;
+  background-color: #eec5f4;
+  color: white;
+  padding: 35px 0;
+  width: 100%;
+}
+footer a {
+  color: white;
+}
+#login {
+  padding: 5% 0 10%;
+  text-align: center;
+}
+#login .register-link {
+  margin-top: 35px;
+}
+#login .register-link > a {
+  color: #a16565;
+  font-size: 16px;
+}
+
+/*--------------------------avatar-------------------------------*/
+
+#viewAvatar {
+  text-align: center;
+  margin-bottom: 75px;
+}
+#viewAvatar .title {
+  width: 100%;
+  background: #69D2E7;
+  color: white;
+  padding: 10px 0;
+  margin-bottom: 20px;
+}
+#viewAvatar .title .avatar-name {
+  font-size: 32px;
+  margin-right: 10px;
+}
+#viewAvatar .title a {
+  text-decoration: none;
+  color: white;
+  margin-left: 8px;
+  font-size: 18px;
+  font-weight: bold;
+}
+#viewAvatar .title a:hover,
+#viewAvatar .title a:focus {
+  text-decoration: underline;
+}
+#viewAvatar .avatar-image {
+  display: inline-block;
+  margin: 0 50px;
+  max-width: 30%;
+}
+#viewAvatar .avatar-features {
+  display: inline-block;
+  text-align: center;
+  vertical-align: top;
+}
+#viewAvatar .avatar-features ul {
+  padding-left: 0;
+}
+#viewAvatar .avatar-features ul li {
+  list-style-type: none;
+}
+
+/*--------------------------make.avatar-------------------------------*/
+#makeAvatar {
+  padding: 0 0 10%;
+  overflow: hidden;
+}
+#makeAvatar > h1 {
+  text-align: center;
+}
+#featureSection {
+  margin-left: 25px;
+  display: inline-block;
+  position: absolute;
+}
+#avatarSection {
+  margin-left: 2%;
+  display: inline-block;
+}
+#avatarSection .name {
+  margin-bottom: 15px;
+}
+#avatarSection .name input {
+  width: 310px;
+}
+
+#avatarSection #avatar {
+  border: solid 1px #69D2E7;
+}
+#featureSection #features {
+  display: flex;
+  flex-wrap: wrap;
+  padding-left: 0;
+}
+#featureSection #features li {
+  list-style-type: none;
+  width: 120px;
+  text-align: center;
+  margin: 5px;
+  padding: 10px;
+}
+#featureSection #features img {
+  max-width: 100px;
+}
+#featureSection #features .feature.added {
+  background-color: #A7DBD8;
+  color: white;
+}
+
+/*--------------------------register-------------------------------*/
+
+#registerForm {
+  text-align: center;
+  padding: 5% 0 10%;
+}
+
+#registerForm input,
+#registerForm button {
+  display: block;
+  margin: 0 auto 15px;
+}
+
+/*--------------------------user-------------------------------*/
+
+#userInfo {
+  text-align: center;
+}
