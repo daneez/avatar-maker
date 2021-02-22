@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: Arial;
-  color: #930fd0;
+  color: #7577CD;
   text-align: center;
 }
 body.index {
@@ -18,6 +18,9 @@ header img.logo {
   position: absolute;
   top: 5px;
   left: 25px;
+}
+h1 {
+  text-align: center;
 }
 #main img.logo {
   max-height: 150px;
@@ -91,13 +94,17 @@ button:focus {
   background: white;
   overflow: hidden;
   text-align: center;
+  margin-top: 15px;
+}
+#more > h2 {
+  margin-bottom: 0;
 }
 .avatar-boxes {
   list-style-type: none;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
-  margin: 50px 0;
+  margin: 30px 0;
 }
 .avatar-boxes li {
   padding: 20px;
@@ -194,17 +201,15 @@ footer a {
 #makeAvatar {
   padding: 0 0 10%;
   overflow: hidden;
-}
-#makeAvatar > h1 {
-  text-align: center;
+  display: flex;
 }
 #featureSection {
   margin-left: 25px;
   display: inline-block;
-  position: absolute;
+  position: relative;
 }
 #avatarSection {
-  margin-left: 2%;
+  margin-left: 15%;
   display: inline-block;
 }
 #avatarSection .name {
