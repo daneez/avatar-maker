@@ -1,6 +1,6 @@
 {
 	"name": "Free Style",
 	"features": ["Face Type A", "Hair Style C", "Eye Shap A", "Nose", "Mouth Shape B", "Glasses", "Beard", "Mouth Shape C"],
-	"img": "/assets/avatars/free-style.png",
+	"img": "//avatar-maker-danni.s3-ap-southeast-2.amazonaws.com/avatars/free-style.png",
 	"username": "daneez"
 }

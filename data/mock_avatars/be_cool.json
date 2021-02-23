@@ -1,6 +1,6 @@
 {
 	"name": "BE COOL",
 	"features": ["Face Type B", "Hair Style C", "Eye Shap B", "Nose", "Mouth Shape C", "Glasses"],
-	"img": "/assets/avatars/be-cool.png",
+	"img": "//avatar-maker-danni.s3-ap-southeast-2.amazonaws.com/avatars/be-cool.png",
 	"username": "tim"
 }

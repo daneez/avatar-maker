@@ -1,7 +1,7 @@
 const { sortBy, values } = require('lodash')
 
 const Feature = require('../models/feature')
-// const dynamoStore = require('./dynamoStore')
+const dynamoStore = require('./dynamoStore')
 
 const features = {}
 
@@ -24,8 +24,8 @@ function init () {
 }
 
 async function getAll () {
-  const tops = values(features)
-  // const tops = await dynamoStore.getAllItems('features')
+  // const tops = values(features)
+  const tops = await dynamoStore.getAllItems('features')
   return sortBy(tops, ['order'])
 }
 
@@ -33,8 +33,8 @@ async function create (name, previewImage, image, order) {
   const id = name.replace(/ /g, '_').toLowerCase()
   const feature = new Feature(id, name, previewImage, image, order)
 
-  features[id] = feature
-  // return dynamoStore.putItem('features', feature)
+  // features[id] = feature
+  return dynamoStore.putItem('features', feature)
 }
 
 module.exports = {

@@ -1,9 +1,9 @@
 const Sequelize = require('sequelize')
 
 const database = 'avatar_maker'
-const host = '<enter_host_here>'
+const host = 'avatar-db.cfytyxuzfzwr.ap-southeast-2.rds.amazonaws.com'
 const username = 'postgres'
-const password = 'password'
+const password = 'postgres'
 
 const pgClient = new Sequelize(
   database,
