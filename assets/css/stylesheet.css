@@ -70,7 +70,7 @@ button:focus {
   padding: 15px;
   color: white;
   text-decoration: none;
-  border-right: solid 6px #ceb8d8;
+  border-right: solid 6px #fcd3f7;
 }
 .make-avatar-button > a:hover,
 .make-avatar-button > a:focus {
@@ -78,7 +78,7 @@ button:focus {
 }
 .user {
   position: absolute;
-  color: white;
+  color: rgb(145, 9, 242);
   right: 25px;
   top: 15px;
 }
@@ -118,12 +118,15 @@ button:focus {
 }
 .avatar-boxes li:nth-child(3n+1) {
   background-color: #69e7a2;
+  border-right: solid 6px #bfe7d1;
 }
 .avatar-boxes li:nth-child(3n+2) {
   background-color: #32e0f3;
+  border-right: solid 6px #ace1e7;
 }
 .avatar-boxes li:nth-child(3n+3) {
   background-color: #b97ee3;
+  border-right: solid 6px #d2bae4;
 }
 .avatar-boxes li a {
   color: white;
@@ -184,6 +187,7 @@ footer a {
   display: inline-block;
   margin: 0 50px;
   max-width: 30%;
+  width: 400px;
 }
 #viewAvatar .avatar-features {
   display: inline-block;

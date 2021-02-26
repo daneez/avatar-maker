@@ -17,7 +17,7 @@ function loadImages () {
   $.each(features, function (key, val) {
     const img = new window.Image()
     img.setAttribute('crossOrigin', 'anonymous')
-    img.src = '//avatar-maker-danni.s3-ap-southeast-2.amazonaws.com/features/' + val.image
+    img.src = '//avatar-maker-danni.s3-ap-southeast-2.amazonaws.com/features/' + val.image +  '?'
     val.img = img
   })
 }

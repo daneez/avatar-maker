@@ -49,6 +49,7 @@ module.exports.register = async server => {
 
   // setup cache
   const cache = server.cache({
+    cache: 'redis',
     segment: 'sessions',
     expiresIn: 24 * 60 * 60 * 1000
   })
@@ -60,7 +61,7 @@ module.exports.register = async server => {
   server.auth.strategy('session', 'cookie', {
     cookie: {
       isSecure: false,
-      name: 'pzz4lyfe',
+      name: 'dr4fun',
       password: 'password-should-be-32-characters'
     },
     redirectTo: redirectPath,
