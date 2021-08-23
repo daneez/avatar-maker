@@ -5,7 +5,7 @@ const routes = require('./routes')
 
 async function startServer () {
   const server = Hapi.Server({
-    port: 3000
+    port: process.env.PORT || 3000
   })
 
   await plugins.register(server)
